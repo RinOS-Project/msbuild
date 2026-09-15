@@ -36,6 +36,17 @@ public class NodeStatus_Transition_Tests
     }
 
     [Fact]
+    public void EqualNodeStatusesHaveEqualHashCodes()
+    {
+        TerminalNodeStatus first = new("Namespace.Project", "TargetFramework", "rid", "Build", new MockStopwatch());
+        TerminalNodeStatus second = new("Namespace.Project", "TargetFramework", "rid", "Build", new MockStopwatch());
+
+        first.Equals(second).ShouldBeTrue();
+        first.GetHashCode().ShouldBe(second.GetHashCode());
+        first.Equals((object)second).ShouldBeTrue();
+    }
+
+    [Fact]
     public async Task NodeTargetChanges()
     {
         var rendered = Animate(

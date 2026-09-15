@@ -73,6 +73,8 @@ internal class TerminalNodeStatus
         TargetPrefixColor == other.TargetPrefixColor &&
         TargetPrefix == other.TargetPrefix;
 
+    public override bool Equals(object? obj) => Equals(obj as TerminalNodeStatus);
+
     public override string ToString() =>
         (TargetFramework, RuntimeIdentifier) switch
         {
@@ -82,8 +84,6 @@ internal class TerminalNodeStatus
             _ => $"{TerminalLogger.Indentation}{Project} {AnsiCodes.Colorize(TargetFramework, TerminalLogger.TargetFrameworkColor)} {AnsiCodes.Colorize(RuntimeIdentifier, TerminalLogger.RuntimeIdentifierColor)} {Target} ({Stopwatch.ElapsedSeconds:F1}s)"
         };
 
-    public override int GetHashCode()
-    {
-        throw new System.NotImplementedException();
-    }
+    public override int GetHashCode() =>
+        HashCode.Combine(Project, TargetFramework, RuntimeIdentifier, TargetPrefixColor, TargetPrefix, Target);
 }
