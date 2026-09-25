@@ -30,9 +30,28 @@ namespace Microsoft.Build.Evaluation
                 _itemsByType = itemsByType;
             }
 
-            public IItemDictionary<I> Items => throw new NotImplementedException();
+            public IItemDictionary<I> Items
+            {
+                get
+                {
+                    // The lazy lists are the authoritative state while item evaluation is in progress.
+                    // Materialize a snapshot for callers of the diagnostic IEvaluatorData surface rather
+                    // than exposing a mutable dictionary which could diverge from the deferred operations.
+                    var items = new ItemDictionary<I>(_itemsByType.Count);
+                    foreach (var itemList in _itemsByType)
+                    {
+                        var matchedItems = itemList.Value.GetMatchedItems(ImmutableHashSet<string>.Empty);
+                        if (matchedItems.Count > 0)
+                        {
+                            items.ImportItemsOfType(itemList.Key, matchedItems);
+                        }
+                    }
 
-            public List<ProjectItemElement> EvaluatedItemElements => throw new NotImplementedException();
+                    return items;
+                }
+            }
+
+            public List<ProjectItemElement> EvaluatedItemElements => _wrappedData.EvaluatedItemElements;
 
             public ICollection<I> GetItems(string itemType)
             {
