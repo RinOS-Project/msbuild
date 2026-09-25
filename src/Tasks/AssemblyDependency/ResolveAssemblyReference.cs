@@ -3426,23 +3426,29 @@ namespace Microsoft.Build.Tasks
                 {
 #pragma warning disable CA2000 // The OutOfProcRarClient is disposable but its disposal is handled by RegisterTaskObject.
                     OutOfProcRarClient rarClient = OutOfProcRarClient.GetInstance(buildEngine10);
-                    bool success = rarClient.Execute(this);
-
-                    // FilesWritten already defines a public setter which no-ops. Changing its visiblity is a breaking
-                    // change, so we can't set it outside of RAR when we check for properties with OutputAttribute.
-                    // It only has two possible states, so we can just compute it here.
-                    if (_stateFile.Value is not null && FileUtilities.FileExistsNoThrow(_stateFile.Value))
+                    if (rarClient.IsUnavailable)
                     {
-                        _filesWritten.Add(new TaskItem(_stateFile.OriginalValue));
+                        CommunicationsUtilities.Trace("RAR out-of-proc connection is unavailable; using in-proc execution for the remainder of this build.");
                     }
+                    else
+                    {
+                        bool success = rarClient.Execute(this);
 
-                    return success;
+                        // FilesWritten already defines a public setter which no-ops. Changing its visiblity is a breaking
+                        // change, so we can't set it outside of RAR when we check for properties with OutputAttribute.
+                        // It only has two possible states, so we can just compute it here.
+                        if (_stateFile.Value is not null && FileUtilities.FileExistsNoThrow(_stateFile.Value))
+                        {
+                            _filesWritten.Add(new TaskItem(_stateFile.OriginalValue));
+                        }
+
+                        return success;
+                    }
 #pragma warning restore CA2000 // Dispose objects before losing scope
                 }
                 catch (Exception ex)
                 {
                     // If the out-of-proc connection failed, fall back to in-proc.
-                    // TODO: Disable out-of-proc for the remainder of the build if any connection fails.
                     CommunicationsUtilities.Trace($"RAR out-of-proc connection failed, failing back to in-proc. Exception: {ex}");
                 }
             }

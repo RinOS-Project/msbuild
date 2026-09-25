@@ -34,6 +34,8 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         public void Dispose() => _pipeClient.Dispose();
 
+        internal bool IsUnavailable => _connectionFailed;
+
         internal static OutOfProcRarClient GetInstance(IBuildEngine10 buildEngine)
         {
             // We want to reuse the pipe client across all RAR invocations within a build, but release the connection once
