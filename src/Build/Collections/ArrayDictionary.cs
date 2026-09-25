@@ -62,20 +62,20 @@ namespace Microsoft.Build.Collections
         object IDictionary.this[object key]
         {
             get => this[(TKey)key];
-            set => this[(TKey)key] = (TValue)value;
+            set => throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
-        public ICollection<TKey> Keys => keys;
+        public ICollection<TKey> Keys => new List<TKey>(keys, 0, count);
 
-        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => keys;
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => new List<TKey>(keys, 0, count);
 
-        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => values;
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => new List<TValue>(values, 0, count);
 
-        ICollection IDictionary.Keys => keys;
+        ICollection IDictionary.Keys => new List<TKey>(keys, 0, count);
 
-        public ICollection<TValue> Values => values;
+        public ICollection<TValue> Values => new List<TValue>(values, 0, count);
 
-        ICollection IDictionary.Values => values;
+        ICollection IDictionary.Values => new List<TValue>(values, 0, count);
 
         private IEqualityComparer<TKey> KeyComparer => EqualityComparer<TKey>.Default;
 
@@ -93,6 +93,11 @@ namespace Microsoft.Build.Collections
 
         public void Add(TKey key, TValue value)
         {
+            if (ContainsKey(key))
+            {
+                throw new ArgumentException("An item with the same key has already been added.", nameof(key));
+            }
+
             if (count < keys.Length)
             {
                 keys[count] = key;
@@ -112,7 +117,7 @@ namespace Microsoft.Build.Collections
 
         public void Clear()
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -146,6 +151,9 @@ namespace Microsoft.Build.Collections
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
+            if (array is null) throw new ArgumentNullException(nameof(array));
+            if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            if (array.Length - arrayIndex < count) throw new ArgumentException("The destination array is too small.", nameof(array));
             for (int i = 0; i < count; i++)
             {
                 array[arrayIndex + i] = new KeyValuePair<TKey, TValue>(keys[i], values[i]);
@@ -154,7 +162,29 @@ namespace Microsoft.Build.Collections
 
         void ICollection.CopyTo(Array array, int index)
         {
-            throw new NotImplementedException();
+            if (array is null) throw new ArgumentNullException(nameof(array));
+            if (array.Rank != 1) throw new ArgumentException("The destination array must be one-dimensional.", nameof(array));
+            if (array.GetLowerBound(0) != 0) throw new ArgumentException("The destination array must have a zero lower bound.", nameof(array));
+            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
+            if (array.Length - index < count) throw new ArgumentException("The destination array is too small.", nameof(array));
+
+            if (array is KeyValuePair<TKey, TValue>[] pairs)
+            {
+                CopyTo(pairs, index);
+                return;
+            }
+
+            try
+            {
+                for (int i = 0; i < count; i++)
+                {
+                    array.SetValue(new DictionaryEntry(keys[i], values[i]), index + i);
+                }
+            }
+            catch (InvalidCastException)
+            {
+                throw new ArgumentException("The destination array has an incompatible element type.", nameof(array));
+            }
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -171,12 +201,12 @@ namespace Microsoft.Build.Collections
 
         public bool Remove(TKey key)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            throw new System.NotImplementedException();
+            throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
         public bool TryGetValue(TKey key, out TValue value)
@@ -207,17 +237,12 @@ namespace Microsoft.Build.Collections
 
         void IDictionary.Add(object key, object value)
         {
-            if (key is TKey typedKey && value is TValue typedValue)
-            {
-                Add(typedKey, typedValue);
-            }
-
-            throw new NotSupportedException();
+            throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
         void IDictionary.Remove(object key)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
         private struct Enumerator : IEnumerator<KeyValuePair<TKey, TValue>>, IDictionaryEnumerator
@@ -233,12 +258,25 @@ namespace Microsoft.Build.Collections
                 this._emitDictionaryEntries = emitDictionaryEntries;
             }
 
-            public KeyValuePair<TKey, TValue> Current =>
-                new KeyValuePair<TKey, TValue>(
-                    _dictionary.keys[_position],
-                    _dictionary.values[_position]);
+            public KeyValuePair<TKey, TValue> Current
+            {
+                get
+                {
+                    EnsureCurrent();
+                    return new KeyValuePair<TKey, TValue>(
+                        _dictionary.keys[_position],
+                        _dictionary.values[_position]);
+                }
+            }
 
-            private DictionaryEntry CurrentDictionaryEntry => new DictionaryEntry(_dictionary.keys[_position], _dictionary.values[_position]);
+            private DictionaryEntry CurrentDictionaryEntry
+            {
+                get
+                {
+                    EnsureCurrent();
+                    return new DictionaryEntry(_dictionary.keys[_position], _dictionary.values[_position]);
+                }
+            }
 
             object IEnumerator.Current => _emitDictionaryEntries ? CurrentDictionaryEntry : Current;
 
@@ -260,7 +298,15 @@ namespace Microsoft.Build.Collections
 
             public void Reset()
             {
-                throw new NotImplementedException();
+                _position = -1;
+            }
+
+            private void EnsureCurrent()
+            {
+                if (_position < 0 || _position >= _dictionary.Count)
+                {
+                    throw new InvalidOperationException("The enumerator is not positioned on an element.");
+                }
             }
         }
     }
