@@ -53,10 +53,10 @@ namespace Microsoft.Build.FileAccesses
         public FileAccessManager.HandlerRegistration RegisterHandlers(
             Action<BuildRequest, FileAccessData> fileAccessHandler,
             Action<BuildRequest, ProcessData> processHandler) =>
-            throw new NotImplementedException("This method should not be called in OOP nodes.");
+            throw new NotSupportedException("RegisterHandlers is not supported in an out-of-proc node.");
 
         public void WaitForFileAccessReportCompletion(int globalRequestId, CancellationToken cancellationToken) =>
-            throw new NotImplementedException("This method should not be called in OOP nodes.");
+            throw new NotSupportedException("WaitForFileAccessReportCompletion is not supported in an out-of-proc node.");
     }
 }
 #endif

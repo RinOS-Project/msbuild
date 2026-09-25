@@ -381,7 +381,7 @@ namespace Microsoft.Build.BackEnd
                 TaskParameterMessageKind.TaskOutput => args.PropertyName is null ? OutputItemParameterMessagePrefix : OutputPropertyLogMessagePrefix,
                 TaskParameterMessageKind.SkippedTargetInputs => SkipTargetUpToDateInputs,
                 TaskParameterMessageKind.SkippedTargetOutputs => SkipTargetUpToDateOutputs,
-                _ => throw new NotImplementedException($"Unsupported {nameof(TaskParameterMessageKind)} value: {args.Kind}")
+                _ => throw new ArgumentOutOfRangeException(nameof(args.Kind), args.Kind, $"Unsupported {nameof(TaskParameterMessageKind)} value.")
             };
 
             var itemGroupText = GetParameterText(

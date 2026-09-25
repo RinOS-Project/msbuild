@@ -158,7 +158,10 @@ namespace Microsoft.Build.BackEnd
         {
             get
             {
-                throw new NotImplementedException("This property is not implemented because available nodes are unlimited.");
+                // Task hosts are created on demand and are not bounded by the normal
+                // build-node pool. Returning the largest representable count keeps the
+                // INodeProvider contract total without imposing an artificial limit.
+                return int.MaxValue;
             }
         }
 
@@ -185,7 +188,7 @@ namespace Microsoft.Build.BackEnd
         /// </summary>
         public IList<NodeInfo> CreateNodes(int nextNodeId, INodePacketFactory packetFactory, Func<NodeInfo, NodeConfiguration> configurationFactory, int numberOfNodesToCreate)
         {
-            throw new NotImplementedException("Use the other overload of CreateNode instead");
+            throw new NotSupportedException("Task hosts require a TaskHostNodeKey and must use the task-host creation path.");
         }
 
         /// <summary>
@@ -196,7 +199,13 @@ namespace Microsoft.Build.BackEnd
         /// <param name="packet">The packet to send.</param>
         public void SendData(int nodeId, INodePacket packet)
         {
-            throw new NotImplementedException("For task hosts, use the overload that takes TaskHostNodeKey.");
+            if (!_nodeIdToNodeKey.TryGetValue(nodeId, out TaskHostNodeKey nodeKey)
+                || !_nodeContexts.TryGetValue(nodeKey, out NodeContext context))
+            {
+                throw new InvalidOperationException($"No task-host node is registered for node id {nodeId}.");
+            }
+
+            SendData(context, packet);
         }
 
         /// <summary>
