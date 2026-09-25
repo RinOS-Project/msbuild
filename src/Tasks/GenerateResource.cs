@@ -4032,7 +4032,24 @@ namespace Microsoft.Build.Tasks
 
             public override String ReadToEnd()
             {
-                throw new NotImplementedException("NYI");
+                String s = base.ReadToEnd();
+                if (s != null)
+                {
+                    foreach (char ch in s)
+                    {
+                        if (ch == '\n')
+                        {
+                            _lineNumber++;
+                            _col = 0;
+                        }
+                        else
+                        {
+                            _col++;
+                        }
+                    }
+                }
+
+                return s;
             }
 
             internal int LineNumber
