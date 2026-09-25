@@ -46,10 +46,13 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
         private readonly Channel<BuildEventArgs> _eventChannel;
         private readonly Channel<int> _eventCountChannel;
         private readonly SemaphoreSlim _completion = new(0, 1);
+        private readonly RegisteredTaskObjectCacheBase _registeredTaskObjects = new();
+        private readonly Dictionary<string, string> _globalProperties = new(StringComparer.OrdinalIgnoreCase);
 
         private int _pendingCount;
         private MessageImportance _minimumMessageImportance;
         private bool _isTaskInputLoggingEnabled;
+        private bool _allowFailureWithoutError;
 
         internal RarNodeBuildEngine(NodePipeServer pipeServer)
         {
@@ -78,11 +81,18 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         public override bool IsOutOfProcRarNodeEnabled => false;
 
-        public bool AllowFailureWithoutError { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public bool AllowFailureWithoutError
+        {
+            get => _allowFailureWithoutError;
+            set => _allowFailureWithoutError = value;
+        }
 
-        public bool ContinueOnError => throw new NotImplementedException();
+        // RAR is executed as a dedicated node and the request does not carry a
+        // task-level ContinueOnError setting. The owning build engine decides
+        // how to handle the result packet, so the node must report the default.
+        public bool ContinueOnError => false;
 
-        public bool IsRunningMultipleNodes => throw new NotImplementedException();
+        public bool IsRunningMultipleNodes => true;
 
         internal void Setup(
             int lineNumberOfTaskNode,
@@ -106,7 +116,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         public void LogMessageEvent(BuildMessageEventArgs e) => LogEvent(e);
 
-        public void LogCustomEvent(CustomBuildEventArgs e) => throw new NotImplementedException();
+        public void LogCustomEvent(CustomBuildEventArgs e) => LogEvent(e);
 
         /// <summary>
         /// Processes events, batching them into packets to send to the client.
@@ -176,22 +186,43 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             }
         }
 
-        public void LogTelemetry(string eventName, IDictionary<string, string> properties) => throw new NotImplementedException();
+        public void LogTelemetry(string eventName, IDictionary<string, string> properties)
+        {
+            var telemetry = new TelemetryEventArgs
+            {
+                EventName = eventName,
+            };
+
+            if (properties is not null)
+            {
+                foreach (KeyValuePair<string, string> property in properties)
+                {
+                    telemetry.Properties[property.Key] = property.Value;
+                }
+            }
+
+            LogEvent(telemetry);
+        }
 
         public bool ShouldTreatWarningAsError(string warningCode) => false;
 
+        // The RAR endpoint deliberately does not advertise the nested-build
+        // callback protocol. Returning false keeps the compatibility surface
+        // deterministic until that protocol carries project requests and
+        // target outputs; it must not throw a placeholder exception from a
+        // task callback.
         public bool BuildProjectFile(
             string projectFileName,
             string[] targetNames,
             IDictionary globalProperties,
             IDictionary targetOutputs,
-            string toolsVersion) => throw new NotImplementedException();
+            string toolsVersion) => false;
 
         public bool BuildProjectFile(
             string projectFileName,
             string[] targetNames,
             IDictionary globalProperties,
-            IDictionary targetOutputs) => throw new NotImplementedException();
+            IDictionary targetOutputs) => false;
 
         public BuildEngineResult BuildProjectFilesInParallel(
             string[] projectFileNames,
@@ -199,7 +230,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             IDictionary[] globalProperties,
             IList<string>[] removeGlobalProperties,
             string[] toolsVersion,
-            bool returnTargetOutputs) => throw new NotImplementedException();
+            bool returnTargetOutputs) => new(false, null);
 
         public bool BuildProjectFilesInParallel(
             string[] projectFileNames,
@@ -208,22 +239,28 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             IDictionary[] targetOutputsPerProject,
             string[] toolsVersion,
             bool useResultsCache,
-            bool unloadProjectsOnCompletion) => throw new NotImplementedException();
+            bool unloadProjectsOnCompletion) => false;
 
-        public object GetRegisteredTaskObject(object key, RegisteredTaskObjectLifetime lifetime) => throw new NotImplementedException();
+        public object GetRegisteredTaskObject(object key, RegisteredTaskObjectLifetime lifetime) =>
+            _registeredTaskObjects.GetRegisteredTaskObject(key, lifetime);
 
-        public void Reacquire() => throw new NotImplementedException();
+        // This process owns no shared MSBuild scheduler state. Yield/Reacquire
+        // are therefore completed synchronously instead of throwing from the
+        // IBuildEngine3 compatibility surface.
+        public void Reacquire() { }
 
-        public void RegisterTaskObject(object key, object obj, RegisteredTaskObjectLifetime lifetime, bool allowEarlyCollection) => throw new NotImplementedException();
+        public void RegisterTaskObject(object key, object obj, RegisteredTaskObjectLifetime lifetime, bool allowEarlyCollection) =>
+            _registeredTaskObjects.RegisterTaskObject(key, obj, lifetime, allowEarlyCollection);
 
-        public object UnregisterTaskObject(object key, RegisteredTaskObjectLifetime lifetime) => throw new NotImplementedException();
+        public object UnregisterTaskObject(object key, RegisteredTaskObjectLifetime lifetime) =>
+            _registeredTaskObjects.UnregisterTaskObject(key, lifetime);
 
-        public void Yield() => throw new NotImplementedException();
+        public void Yield() { }
 
-        public int RequestCores(int requestedCores) => throw new NotImplementedException();
+        public int RequestCores(int requestedCores) => requestedCores > 0 ? 1 : 0;
 
-        public void ReleaseCores(int coresToRelease) => throw new NotImplementedException();
+        public void ReleaseCores(int coresToRelease) { }
 
-        public IReadOnlyDictionary<string, string> GetGlobalProperties() => throw new NotImplementedException();
+        public IReadOnlyDictionary<string, string> GetGlobalProperties() => _globalProperties;
     }
 }
