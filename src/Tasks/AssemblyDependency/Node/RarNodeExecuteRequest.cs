@@ -21,6 +21,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
         private string _projectDirectory = null!;
         private MessageImportance _minimumMessageImportance;
         private bool _isTaskInputLoggingEnabled;
+        private Dictionary<string, string> _globalProperties = new(StringComparer.OrdinalIgnoreCase);
 
         internal RarNodeExecuteRequest(ResolveAssemblyReference rar)
         {
@@ -38,6 +39,13 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
                     : rar.Log.LogsMessagesOfImportance(MessageImportance.Normal) ? MessageImportance.Normal
                     : MessageImportance.High;
             _isTaskInputLoggingEnabled = rar.Log.IsTaskInputLoggingEnabled;
+            if (rar.BuildEngine is IBuildEngine6 buildEngine6)
+            {
+                foreach (KeyValuePair<string, string> property in buildEngine6.GetGlobalProperties())
+                {
+                    _globalProperties[property.Key] = property.Value;
+                }
+            }
         }
 
         internal RarNodeExecuteRequest(ITranslator translator) => Translate(translator);
@@ -58,6 +66,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             translator.Translate(ref _projectDirectory);
             translator.TranslateEnum(ref _minimumMessageImportance, (int)_minimumMessageImportance);
             translator.Translate(ref _isTaskInputLoggingEnabled);
+            translator.TranslateDictionary(ref _globalProperties, StringComparer.OrdinalIgnoreCase);
         }
 
         internal void SetTaskInputs(ResolveAssemblyReference rar, RarNodeBuildEngine buildEngine)
@@ -67,7 +76,8 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
                 _columnNumberOfTaskNode,
                 _projectFileOfTaskNode,
                 _minimumMessageImportance,
-                _isTaskInputLoggingEnabled);
+                _isTaskInputLoggingEnabled,
+                _globalProperties);
 
             RarTaskParameters.Set(ParameterType.Input, rar, _taskInputs);
             rar.AllowOutOfProcNode = false;

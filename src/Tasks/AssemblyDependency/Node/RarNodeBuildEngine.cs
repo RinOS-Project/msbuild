@@ -99,13 +99,22 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             int columnNumberOfTaskNode,
             string? projectFileOfTaskNode,
             MessageImportance minimumMessageImportance,
-            bool isTaskInputLoggingEnabled)
+            bool isTaskInputLoggingEnabled,
+            IReadOnlyDictionary<string, string>? globalProperties)
         {
             LineNumberOfTaskNode = lineNumberOfTaskNode;
             ColumnNumberOfTaskNode = columnNumberOfTaskNode;
             ProjectFileOfTaskNode = projectFileOfTaskNode;
             _minimumMessageImportance = minimumMessageImportance;
             _isTaskInputLoggingEnabled = isTaskInputLoggingEnabled;
+            _globalProperties.Clear();
+            if (globalProperties is not null)
+            {
+                foreach (KeyValuePair<string, string> property in globalProperties)
+                {
+                    _globalProperties[property.Key] = property.Value;
+                }
+            }
         }
 
         public override bool LogsMessagesOfImportance(MessageImportance importance) => importance <= _minimumMessageImportance;
