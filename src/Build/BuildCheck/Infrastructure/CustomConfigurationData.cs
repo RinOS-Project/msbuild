@@ -93,6 +93,29 @@ public sealed class CustomConfigurationData
 
     public override int GetHashCode()
     {
-        throw new NotImplementedException("CustomConfigurationData does not implement GetHashCode method");
+        unchecked
+        {
+            int hash = 17;
+            hash = (hash * 31) + GetOrdinalHash(RuleId);
+
+            if (ConfigurationData is null)
+            {
+                return (hash * 31) + 0;
+            }
+
+            // Dictionary enumeration order is not part of the equality contract, so
+            // combine entries with a commutative operation.
+            int entriesHash = 0;
+            foreach (var entry in ConfigurationData)
+            {
+                entriesHash += ((GetOrdinalHash(entry.Key) * 397) ^ GetOrdinalHash(entry.Value));
+            }
+
+            hash = (hash * 31) + 1;
+            hash = (hash * 31) + ConfigurationData.Count;
+            return (hash * 31) + entriesHash;
+        }
     }
+
+    private static int GetOrdinalHash(string? value) => value is null ? 0 : StringComparer.Ordinal.GetHashCode(value);
 }

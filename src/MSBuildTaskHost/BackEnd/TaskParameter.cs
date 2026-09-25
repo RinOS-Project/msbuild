@@ -427,7 +427,7 @@ internal class TaskParameter : MarshalByRefObject, ITranslatable
                         TypeCode.Double => typeof(double),
                         TypeCode.Decimal => typeof(decimal),
                         TypeCode.DateTime => typeof(DateTime),
-                        _ => throw new NotImplementedException(),
+                        _ => throw new ArgumentOutOfRangeException(nameof(_parameterTypeCode), _parameterTypeCode, "Unsupported task parameter array element type."),
                     };
 
                     int length = 0;

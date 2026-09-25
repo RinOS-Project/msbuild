@@ -40,7 +40,7 @@ namespace Microsoft.Build.Logging
 
         public override long Length => _length;
 
-        public override long Position { get => _position; set => throw new NotImplementedException(); }
+        public override long Position { get => _position; set => throw new NotSupportedException(); }
 
         public override void Flush() => _stream.Flush();
         public override Task FlushAsync(CancellationToken cancellationToken) => _stream.FlushAsync(cancellationToken);
@@ -99,8 +99,8 @@ namespace Microsoft.Build.Logging
         }
 #endif
 
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotImplementedException();
-        public override void SetLength(long value) => throw new NotImplementedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotImplementedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 }

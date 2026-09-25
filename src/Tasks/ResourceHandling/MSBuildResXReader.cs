@@ -126,7 +126,7 @@ namespace Microsoft.Build.Tasks.ResourceHandling
             {
                 if (elem.HasElements)
                 {
-                    throw new NotImplementedException("User-facing error for bad resx that has child elements but not `value`");
+                    throw new InvalidDataException("A resx data element with child elements must contain a value element.");
                 }
 
                 value = elem.Value;

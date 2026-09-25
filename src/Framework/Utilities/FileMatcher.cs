@@ -240,7 +240,7 @@ namespace Microsoft.Build.Shared
                         FileSystemEntity.Files => "F",
                         FileSystemEntity.Directories => "D",
                         FileSystemEntity.FilesAndDirectories => "A",
-                        _ => throw new NotImplementedException()
+                        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unexpected filesystem entity type.")
                     } + ";" + path;
                     IReadOnlyList<string> allEntriesForPath = getFileSystemDirectoryEntriesCache.GetOrAdd(
                             cacheKey,
