@@ -105,7 +105,7 @@ namespace Microsoft.Build.Evaluation
             ArgumentNullException.ThrowIfNull(projectCollection);
             ArgumentNullException.ThrowIfNull(link);
             ProjectCollection = projectCollection;
-            implementationInternal = new ProjectLinkInternalNotImplemented();
+            implementationInternal = new ProjectLinkInternalUnsupported();
             implementation = link;
         }
 
@@ -3856,29 +3856,36 @@ namespace Microsoft.Build.Evaluation
             string ExpandMetadataValueBestEffortLeaveEscaped(IMetadataTable metadataTable, string unevaluatedValue, ElementLocation metadataLocation);
         }
 
-        private class ProjectLinkInternalNotImplemented : IProjectLinkInternal
+        private sealed class ProjectLinkInternalUnsupported : IProjectLinkInternal
         {
-            public Data TestOnlyGetPrivateData { get { throw new NotImplementedException(); } }
+            private static NotSupportedException Unsupported()
+                => new("Linked project internal evaluation services are unavailable in this proxy.");
 
-            public ISet<string> GlobalPropertiesToTreatAsLocal { get { throw new NotImplementedException(); } }
+            public Data TestOnlyGetPrivateData => throw Unsupported();
+
+            public ISet<string> GlobalPropertiesToTreatAsLocal => throw Unsupported();
 
             public bool IsLinked => true;
 
             public bool IsZombified { get; set; }
 
-            public bool UsesProjectRootElement(ProjectRootElement xmlRootElement) { throw new NotImplementedException(); }
+            public bool UsesProjectRootElement(ProjectRootElement xmlRootElement) => throw Unsupported();
 
-            public bool IsSuitableExistingItemXml(ProjectItemElement candidateExistingItemXml, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata) { throw new NotImplementedException(); }
+            public bool IsSuitableExistingItemXml(ProjectItemElement candidateExistingItemXml, string unevaluatedInclude, IEnumerable<KeyValuePair<string, string>> metadata)
+                => throw Unsupported();
 
-            public void RemoveItemBeforeItemTypeChange(ProjectItem item) { throw new NotImplementedException(); }
+            public void RemoveItemBeforeItemTypeChange(ProjectItem item) => throw Unsupported();
 
-            public void ReAddExistingItemAfterItemTypeChange(ProjectItem item) { throw new NotImplementedException(); }
+            public void ReAddExistingItemAfterItemTypeChange(ProjectItem item) => throw Unsupported();
 
-            public string ExpandPropertyValueBestEffortLeaveEscaped(string unevaluatedValue, ElementLocation propertyLocation) { throw new NotImplementedException(); }
+            public string ExpandPropertyValueBestEffortLeaveEscaped(string unevaluatedValue, ElementLocation propertyLocation)
+                => throw Unsupported();
 
-            public string ExpandItemIncludeBestEffortLeaveEscaped(ProjectItemElement renamedItemElement) { throw new NotImplementedException(); }
+            public string ExpandItemIncludeBestEffortLeaveEscaped(ProjectItemElement renamedItemElement)
+                => throw Unsupported();
 
-            public string ExpandMetadataValueBestEffortLeaveEscaped(IMetadataTable metadataTable, string unevaluatedValue, ElementLocation metadataLocation) { throw new NotImplementedException(); }
+            public string ExpandMetadataValueBestEffortLeaveEscaped(IMetadataTable metadataTable, string unevaluatedValue, ElementLocation metadataLocation)
+                => throw Unsupported();
         }
 
         /// <summary>
