@@ -38,7 +38,7 @@ namespace Microsoft.Build.Framework
             IDictionary<string, SdkResultItem> itemsToAdd,
             IEnumerable<string> warnings = null)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("The SDK resolver must override the extended IndicateSuccess overload.");
         }
 
         /// <summary>
@@ -62,7 +62,7 @@ namespace Microsoft.Build.Framework
             IDictionary<string, SdkResultItem> itemsToAdd,
             IEnumerable<string> warnings)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("The SDK resolver must override the extended IndicateSuccess overload.");
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Microsoft.Build.Framework
             IEnumerable<string> warnings = null,
             IDictionary<string, string> environmentVariablesToAdd = null)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("The SDK resolver must override the environment-aware IndicateSuccess overload.");
         }
 
         /// <summary>
@@ -122,7 +122,7 @@ namespace Microsoft.Build.Framework
             IEnumerable<string> warnings = null,
             IDictionary<string, string> environmentVariablesToAdd = null)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("The SDK resolver must override the environment-aware IndicateSuccess overload.");
         }
 
         /// <summary>

@@ -106,7 +106,7 @@ namespace Microsoft.Build.BackEnd
         {
             get
             {
-                throw new NotImplementedException();
+                throw new NotSupportedException("ContinueOnError is unavailable while a task factory is being constructed.");
             }
         }
 
@@ -285,7 +285,7 @@ namespace Microsoft.Build.BackEnd
         /// <returns>True on success, false otherwise.</returns>
         public bool BuildProjectFile(string projectFileName, string[] targetNames, System.Collections.IDictionary globalProperties, System.Collections.IDictionary targetOutputs)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException("BuildProjectFile is unavailable while a task factory is being constructed.");
         }
 
         #endregion
