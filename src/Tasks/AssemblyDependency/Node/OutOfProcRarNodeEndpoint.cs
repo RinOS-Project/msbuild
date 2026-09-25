@@ -52,7 +52,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             }
             catch (OperationCanceledException)
             {
-                // Swallow cancellation excpetions for now. We're using this as a simple way to gracefully shutdown the
+                // Swallow cancellation exceptions for now. We're using this as a simple way to gracefully shutdown the
                 // endpoint, instead of having to implement separate Start / Stop methods and deferring to the caller.
                 // Can reevaluate if we need more granular control over cancellation vs shutdown.
                 CommunicationsUtilities.Trace($"({_endpointId}) RAR endpoint stopped due to cancellation.");
@@ -89,7 +89,8 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
                     switch (packet.Type)
                     {
                         case NodePacketType.RarNodeEndpointConfiguration:
-                            // TODO: Pass in client state such as immutable directories, environment variables, ect.
+                            // This packet type is reserved for compatibility. Request-scoped state is carried by
+                            // RarNodeExecuteRequest, including the task environment and global properties.
                             break;
                         case NodePacketType.RarNodeExecuteRequest:
                             CommunicationsUtilities.Trace($"({_endpointId}) Executing RAR...");
