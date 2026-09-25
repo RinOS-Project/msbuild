@@ -136,12 +136,27 @@ namespace Microsoft.Build.Tasks
             {
                 Tasks.HashEncoding.Hex => ConversionUtilities.ConvertByteArrayToHex(hash),
                 Tasks.HashEncoding.Base64 => Convert.ToBase64String(hash),
-                _ => throw new NotImplementedException(),
+                _ => throw new ArgumentOutOfRangeException(nameof(encoding), encoding, "Unsupported hash encoding."),
             };
         }
 
         internal static bool TryParseHashEncoding(string value, out HashEncoding encoding)
-            => Enum.TryParse<HashEncoding>(value, /*ignoreCase:*/ true, out encoding);
+        {
+            if (string.Equals(value, _hashEncodingHex, StringComparison.OrdinalIgnoreCase))
+            {
+                encoding = Tasks.HashEncoding.Hex;
+                return true;
+            }
+
+            if (string.Equals(value, _hashEncodingBase64, StringComparison.OrdinalIgnoreCase))
+            {
+                encoding = Tasks.HashEncoding.Base64;
+                return true;
+            }
+
+            encoding = default;
+            return false;
+        }
 
         internal static byte[] ComputeHash(Func<HashAlgorithm> algorithmFactory, AbsolutePath filePath, CancellationToken ct)
         {
