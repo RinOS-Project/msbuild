@@ -212,7 +212,7 @@ namespace Microsoft.Build.BackEnd
 
         public bool Execute()
         {
-            throw new NotImplementedException();
+            return ExecuteInternal().GetAwaiter().GetResult();
         }
 
         /// <summary>
