@@ -21,7 +21,8 @@ namespace Microsoft.Build.Evaluation
     /// SimpleProjectRootElementCache is not currently intended for use outside of evaluation. Several code paths
     /// executed within a full build take a hard dependency on the strong/weak reference behavior used within
     /// ProjectRootElementCache, and further investigation is required to determine the best way to hide these behind
-    /// an abstraction. As such, any method unused by evaluation will throw NotImplementedException.
+    /// an abstraction. It still forwards cache notifications so callers do not observe a different dirty-event
+    /// contract when this cache is selected.
     /// </summary>
     internal class SimpleProjectRootElementCache : ProjectRootElementCacheBase
     {
@@ -83,7 +84,19 @@ namespace Microsoft.Build.Evaluation
 
         internal override void RenameEntry(string oldFullPath, ProjectRootElement projectRootElement)
         {
-            throw new NotImplementedException();
+            ArgumentException.ThrowIfNullOrEmpty(oldFullPath);
+            ArgumentNullException.ThrowIfNull(projectRootElement);
+            Assumed.NotNull(projectRootElement.FullPath);
+            ErrorUtilities.VerifyThrowInternalRooted(oldFullPath);
+            ErrorUtilities.VerifyThrowInternalRooted(projectRootElement.FullPath);
+
+            Assumed.True(
+                _cache.TryGetValue(oldFullPath, out ProjectRootElement cachedProjectRootElement) &&
+                ReferenceEquals(cachedProjectRootElement, projectRootElement),
+                "The project root element must already be present under its old path.");
+
+            _cache.TryRemove(oldFullPath, out _);
+            _cache[projectRootElement.FullPath] = projectRootElement;
         }
 
         internal override ProjectRootElement TryGet(string projectFile)
@@ -129,12 +142,12 @@ namespace Microsoft.Build.Evaluation
 
         internal override void OnProjectRootElementDirtied(ProjectRootElement sender, ProjectXmlChangedEventArgs e)
         {
-            throw new NotImplementedException();
+            base.OnProjectRootElementDirtied(sender, e);
         }
 
         internal override void OnProjectDirtied(Project sender, ProjectChangedEventArgs e)
         {
-            throw new NotImplementedException();
+            base.OnProjectDirtied(sender, e);
         }
     }
 }
