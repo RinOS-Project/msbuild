@@ -97,11 +97,10 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
                             RarNodeExecuteRequest request = (RarNodeExecuteRequest)packet;
                             ResolveAssemblyReference rarTask = new();
                             
-                            // The TaskEnvironment driver here uses the RAR node process's environment variables
-                            // because the client currently only sends the project directory across the wire.
-                            // When the wire protocol is extended to carry the client's environment variables, 
-                            // construct the driver from those values instead so the task sees the same environment the client did.
-                            using (var environmentDriver = new MultiThreadedTaskEnvironmentDriver(request.ProjectDirectory))
+                            // Use the task environment captured by the client. RAR reads environment variables for
+                            // diagnostics and feature switches, so using the node process environment would make the
+                            // out-of-proc result differ from the in-proc result.
+                            using (var environmentDriver = new MultiThreadedTaskEnvironmentDriver(request.ProjectDirectory, request.EnvironmentVariables))
                             {
                                 rarTask.TaskEnvironment = new TaskEnvironment(environmentDriver);
                                 request.SetTaskInputs(rarTask, _buildEngine);

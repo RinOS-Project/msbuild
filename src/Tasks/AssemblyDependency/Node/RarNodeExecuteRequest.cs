@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Build.BackEnd;
 using Microsoft.Build.Framework;
+using Microsoft.Build.Shared;
 using ParameterType = Microsoft.Build.Tasks.AssemblyDependency.RarTaskParameters.ParameterType;
 
 namespace Microsoft.Build.Tasks.AssemblyDependency
@@ -22,6 +23,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
         private MessageImportance _minimumMessageImportance;
         private bool _isTaskInputLoggingEnabled;
         private Dictionary<string, string> _globalProperties = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, string> _environmentVariables = new(CommunicationsUtilities.EnvironmentVariableComparer);
 
         internal RarNodeExecuteRequest(ResolveAssemblyReference rar)
         {
@@ -30,6 +32,10 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
             // Capture the project directory from TaskEnvironment
             _projectDirectory = rar.TaskEnvironment.ProjectDirectory.Value;
+            foreach (KeyValuePair<string, string> environmentVariable in rar.TaskEnvironment.GetEnvironmentVariables())
+            {
+                _environmentVariables[environmentVariable.Key] = environmentVariable.Value;
+            }
 
             // Ensure log messages are identical to those that would be produced on the client.
             _lineNumberOfTaskNode = rar.BuildEngine.LineNumberOfTaskNode;
@@ -52,6 +58,8 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         public string ProjectDirectory => _projectDirectory;
 
+        public IReadOnlyDictionary<string, string> EnvironmentVariables => _environmentVariables;
+
         public NodePacketType Type => NodePacketType.RarNodeExecuteRequest;
 
         public void Translate(ITranslator translator)
@@ -67,6 +75,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             translator.TranslateEnum(ref _minimumMessageImportance, (int)_minimumMessageImportance);
             translator.Translate(ref _isTaskInputLoggingEnabled);
             translator.TranslateDictionary(ref _globalProperties, StringComparer.OrdinalIgnoreCase);
+            translator.TranslateDictionary(ref _environmentVariables, CommunicationsUtilities.EnvironmentVariableComparer);
         }
 
         internal void SetTaskInputs(ResolveAssemblyReference rar, RarNodeBuildEngine buildEngine)

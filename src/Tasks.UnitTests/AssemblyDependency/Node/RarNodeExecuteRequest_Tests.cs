@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.Build.Framework;
 using Microsoft.Build.Internal;
@@ -80,6 +81,26 @@ namespace Microsoft.Build.UnitTests.ResolveAssemblyReference_Tests
             Assert.Equal(mockEngine.LogsMessagesOfImportance(MessageImportance.Normal), engineServices.LogsMessagesOfImportance(MessageImportance.Normal));
             Assert.Equal(mockEngine.LogsMessagesOfImportance(MessageImportance.High), engineServices.LogsMessagesOfImportance(MessageImportance.High));
             Assert.Equal(mockEngine.IsTaskInputLoggingEnabled, engineServices.IsTaskInputLoggingEnabled);
+        }
+
+        [Fact]
+        public void TaskEnvironmentIsCapturedForOutOfProcExecution()
+        {
+            ResolveAssemblyReference clientRar = new()
+            {
+                BuildEngine = new MockEngine(),
+                TaskEnvironment = TaskEnvironment.CreateWithProjectDirectoryAndEnvironment(
+                    Path.GetTempPath(),
+                    new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["RINOS_RAR_ENVIRONMENT"] = "captured",
+                    }),
+            };
+
+            RarNodeExecuteRequest request = new(clientRar);
+
+            Assert.Equal("captured", request.EnvironmentVariables["RINOS_RAR_ENVIRONMENT"]);
+            Assert.Equal(clientRar.TaskEnvironment.ProjectDirectory.Value, request.ProjectDirectory);
         }
 
         [Fact]

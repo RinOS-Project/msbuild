@@ -19,6 +19,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
         internal const string TaskObjectCacheKey = "OutOfProcRarClient";
 
         private readonly NodePipeClient _pipeClient;
+        private bool _connectionFailed;
 
         private OutOfProcRarClient()
         {
@@ -52,57 +53,73 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         internal bool Execute(ResolveAssemblyReference rarTask)
         {
+            if (_connectionFailed)
+            {
+                throw new InvalidOperationException("The out-of-proc RAR node is unavailable for the remainder of this build.");
+            }
+
             // This should only be true at the start of a build.
             if (!_pipeClient.IsConnected)
             {
                 // Don't set a timeout since the build manager already blocks until the server is running.
                 if (!_pipeClient.ConnectToServer(0))
                 {
-                    return false;
+                    _connectionFailed = true;
+                    throw new InvalidOperationException("The out-of-proc RAR node could not be reached.");
                 }
             }
 
-            _pipeClient.WritePacket(new RarNodeExecuteRequest(rarTask));
-
-            INodePacket packet = _pipeClient.ReadPacket();
-
-            while (packet.Type != NodePacketType.RarNodeExecuteResponse)
+            try
             {
-                if (packet.Type == NodePacketType.RarNodeBufferedLogEvents)
+                _pipeClient.WritePacket(new RarNodeExecuteRequest(rarTask));
+
+                INodePacket packet = _pipeClient.ReadPacket();
+
+                while (packet.Type != NodePacketType.RarNodeExecuteResponse)
                 {
-                    RarNodeBufferedLogEvents logEvents = (RarNodeBufferedLogEvents)packet;
-                    foreach (LogMessagePacketBase logMessagePacket in logEvents.EventQueue)
+                    if (packet.Type == NodePacketType.RarNodeBufferedLogEvents)
                     {
-                        BuildEventArgs buildEvent = logMessagePacket.NodeBuildEvent?.Value!;
-                        switch (logMessagePacket.EventType)
+                        RarNodeBufferedLogEvents logEvents = (RarNodeBufferedLogEvents)packet;
+                        foreach (LogMessagePacketBase logMessagePacket in logEvents.EventQueue)
                         {
-                            case LoggingEventType.BuildErrorEvent:
-                                rarTask.BuildEngine.LogErrorEvent((BuildErrorEventArgs)buildEvent);
-                                break;
-                            case LoggingEventType.BuildWarningEvent:
-                                rarTask.BuildEngine.LogWarningEvent((BuildWarningEventArgs)buildEvent);
-                                break;
-                            case LoggingEventType.BuildMessageEvent:
-                                rarTask.BuildEngine.LogMessageEvent((BuildMessageEventArgs)buildEvent);
-                                break;
-                            default:
-                                Assumed.Unreachable($"Received unexpected log event type {logMessagePacket.Type}");
-                                break;
+                            BuildEventArgs buildEvent = logMessagePacket.NodeBuildEvent?.Value!;
+                            switch (logMessagePacket.EventType)
+                            {
+                                case LoggingEventType.BuildErrorEvent:
+                                    rarTask.BuildEngine.LogErrorEvent((BuildErrorEventArgs)buildEvent);
+                                    break;
+                                case LoggingEventType.BuildWarningEvent:
+                                    rarTask.BuildEngine.LogWarningEvent((BuildWarningEventArgs)buildEvent);
+                                    break;
+                                case LoggingEventType.BuildMessageEvent:
+                                    rarTask.BuildEngine.LogMessageEvent((BuildMessageEventArgs)buildEvent);
+                                    break;
+                                default:
+                                    Assumed.Unreachable($"Received unexpected log event type {logMessagePacket.Type}");
+                                    break;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    Assumed.Unreachable($"Received unexpected packet type {packet.Type}");
+                    else
+                    {
+                        Assumed.Unreachable($"Received unexpected packet type {packet.Type}");
+                    }
+
+                    packet = _pipeClient.ReadPacket();
                 }
 
-                packet = _pipeClient.ReadPacket();
+                RarNodeExecuteResponse response = (RarNodeExecuteResponse)packet;
+                response.SetTaskOutputs(rarTask);
+
+                return response.Success;
             }
-
-            RarNodeExecuteResponse response = (RarNodeExecuteResponse)packet;
-            response.SetTaskOutputs(rarTask);
-
-            return response.Success;
+            catch
+            {
+                // A broken pipe or malformed response cannot be recovered within this build. The owning task will
+                // fall back to in-proc execution, and subsequent RAR calls should not retry the broken endpoint.
+                _connectionFailed = true;
+                throw;
+            }
         }
     }
 }
