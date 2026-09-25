@@ -466,7 +466,10 @@ namespace Microsoft.Build.BackEnd
         }
 
         // The process here is the same as in the main node.
-        public IEnumerable<Process> GetProcesses() => throw new NotImplementedException();
+        // In-proc nodes do not own a child process. Returning an empty sequence
+        // keeps BuildManager's process aggregation total without pretending that
+        // an in-process node can be represented by a Process instance.
+        public IEnumerable<Process> GetProcesses() => Array.Empty<Process>();
 
         #endregion
     }
