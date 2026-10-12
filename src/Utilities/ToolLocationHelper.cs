@@ -262,6 +262,9 @@ namespace Microsoft.Build.Utilities
         /// </summary>
         private static Dictionary<string, string[]> s_cachedExtensionSdkReferences;
 
+        private static string[] CopyReferencePaths(string[] references)
+            => references == null ? null : (string[])references.Clone();
+
         /// <summary>
         /// Cache the list of supported frameworks
         /// </summary>
@@ -893,7 +896,7 @@ namespace Microsoft.Build.Utilities
 
                 if (s_cachedTargetPlatformReferences.TryGetValue(cacheKey, out string[] targetPlatformReferences))
                 {
-                    return targetPlatformReferences;
+                    return CopyReferencePaths(targetPlatformReferences);
                 }
 
                 if (string.IsNullOrEmpty(sdkIdentifier) && string.IsNullOrEmpty(sdkVersion))
@@ -906,7 +909,7 @@ namespace Microsoft.Build.Utilities
                 }
 
                 s_cachedTargetPlatformReferences.Add(cacheKey, targetPlatformReferences);
-                return targetPlatformReferences;
+                return CopyReferencePaths(targetPlatformReferences);
             }
         }
 
@@ -958,11 +961,13 @@ namespace Microsoft.Build.Utilities
                     s_cachedExtensionSdkReferences = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
                 }
 
-                string cacheKey = string.Join("|", extensionSdkMoniker, targetSdkIdentifier, targetSdkVersion);
+                string cacheKey = string.Join("|", extensionSdkMoniker, targetSdkIdentifier,
+                    targetSdkVersion, diskRoots, extensionDiskRoots, registryRoot,
+                    targetPlatformIdentifier, targetPlatformVersion);
 
                 if (s_cachedExtensionSdkReferences.TryGetValue(cacheKey, out string[] extensionSdkReferences))
                 {
-                    return extensionSdkReferences;
+                    return CopyReferencePaths(extensionSdkReferences);
                 }
 
                 TargetPlatformSDK matchingSdk = GetMatchingPlatformSDK(targetSdkIdentifier, targetSdkVersion, diskRoots, extensionDiskRoots, registryRoot);
@@ -995,7 +1000,7 @@ namespace Microsoft.Build.Utilities
                 }
 
                 s_cachedExtensionSdkReferences.Add(cacheKey, extensionSdkReferences);
-                return extensionSdkReferences;
+                return CopyReferencePaths(extensionSdkReferences);
             }
         }
 
@@ -1030,7 +1035,6 @@ namespace Microsoft.Build.Utilities
 
             try
             {
-                // TODO: Add caching so that we only have to read all this stuff in once.
                 string sdkRoot = GetPlatformSDKLocation(targetPlatformIdentifier, targetPlatformVersion, diskRoots, registryRoot);
                 string winmdLocation = null;
 
