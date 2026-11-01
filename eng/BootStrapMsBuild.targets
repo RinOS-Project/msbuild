@@ -323,7 +323,7 @@
     <ItemGroup>
       <_AcquiredSdkCurrentFile Include="$(InstallDir)sdk\$(BootstrapSdkVersion)\Current\*.*" />
       <_FreshlyBuiltCurrentFile Include="$(OutDir)%(_AcquiredSdkCurrentFile.Filename)%(_AcquiredSdkCurrentFile.Extension)"
-                                Condition="Exists('$(OutDir)%(_AcquiredSdkCurrentFile.Filename)%(_AcquiredSdkCurrentFile.Extension)')" />
+                                Condition="'%(_AcquiredSdkCurrentFile.Filename)' != '' and Exists('$(OutDir)%(_AcquiredSdkCurrentFile.Filename)%(_AcquiredSdkCurrentFile.Extension)')" />
     </ItemGroup>
 
     <Copy SourceFiles="@(_FreshlyBuiltCurrentFile)"
