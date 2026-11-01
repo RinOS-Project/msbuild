@@ -46,6 +46,7 @@
     <Compile Include="..\Shared\NodePipeClient.cs" />
     <Compile Include="..\Shared\NodePipeServer.cs" />
     <Compile Include="..\Shared\NodeShutdown.cs" />
+    <Compile Include="..\Shared\RegisteredTaskObjectCacheBase.cs" />
     <Compile Include="..\Shared\TaskParameter.cs" />
     <Compile Include="..\Shared\TaskParameterValueStringConverter.cs" />
     <Compile Include="..\Shared\TaskParameterTypeVerifier.cs" />

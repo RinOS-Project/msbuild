@@ -65,17 +65,28 @@ namespace Microsoft.Build.Collections
             set => throw new NotSupportedException("ArrayDictionary is read-only after construction.");
         }
 
-        public ICollection<TKey> Keys => new List<TKey>(keys, 0, count);
+        public ICollection<TKey> Keys => CopyRange(keys, count);
 
-        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => new List<TKey>(keys, 0, count);
+        IEnumerable<TKey> IReadOnlyDictionary<TKey, TValue>.Keys => CopyRange(keys, count);
 
-        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => new List<TValue>(values, 0, count);
+        IEnumerable<TValue> IReadOnlyDictionary<TKey, TValue>.Values => CopyRange(values, count);
 
-        ICollection IDictionary.Keys => new List<TKey>(keys, 0, count);
+        ICollection IDictionary.Keys => CopyRange(keys, count);
 
-        public ICollection<TValue> Values => new List<TValue>(values, 0, count);
+        public ICollection<TValue> Values => CopyRange(values, count);
 
-        ICollection IDictionary.Values => new List<TValue>(values, 0, count);
+        ICollection IDictionary.Values => CopyRange(values, count);
+
+        private static List<T> CopyRange<T>(T[] source, int length)
+        {
+            var result = new List<T>(length);
+            for (int i = 0; i < length; i++)
+            {
+                result.Add(source[i]);
+            }
+
+            return result;
+        }
 
         private IEqualityComparer<TKey> KeyComparer => EqualityComparer<TKey>.Default;
 
