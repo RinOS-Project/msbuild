@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using Microsoft.Build.BackEnd;
 using Microsoft.Build.Framework;
-using Microsoft.Build.Shared;
 using ParameterType = Microsoft.Build.Tasks.AssemblyDependency.RarTaskParameters.ParameterType;
 
 namespace Microsoft.Build.Tasks.AssemblyDependency
@@ -23,7 +22,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
         private MessageImportance _minimumMessageImportance;
         private bool _isTaskInputLoggingEnabled;
         private Dictionary<string, string> _globalProperties = new(StringComparer.OrdinalIgnoreCase);
-        private Dictionary<string, string> _environmentVariables = new(CommunicationsUtilities.EnvironmentVariableComparer);
+        private Dictionary<string, string> _environmentVariables = new(StringComparer.OrdinalIgnoreCase);
 
         internal RarNodeExecuteRequest(ResolveAssemblyReference rar)
         {
@@ -58,7 +57,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
 
         public string ProjectDirectory => _projectDirectory;
 
-        public IReadOnlyDictionary<string, string> EnvironmentVariables => _environmentVariables;
+        public IDictionary<string, string> EnvironmentVariables => _environmentVariables;
 
         public NodePacketType Type => NodePacketType.RarNodeExecuteRequest;
 
@@ -75,7 +74,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             translator.TranslateEnum(ref _minimumMessageImportance, (int)_minimumMessageImportance);
             translator.Translate(ref _isTaskInputLoggingEnabled);
             translator.TranslateDictionary(ref _globalProperties, StringComparer.OrdinalIgnoreCase);
-            translator.TranslateDictionary(ref _environmentVariables, CommunicationsUtilities.EnvironmentVariableComparer);
+            translator.TranslateDictionary(ref _environmentVariables, StringComparer.OrdinalIgnoreCase);
         }
 
         internal void SetTaskInputs(ResolveAssemblyReference rar, RarNodeBuildEngine buildEngine)

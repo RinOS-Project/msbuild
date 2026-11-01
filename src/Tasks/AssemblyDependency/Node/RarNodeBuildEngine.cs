@@ -239,7 +239,7 @@ namespace Microsoft.Build.Tasks.AssemblyDependency
             IDictionary[] globalProperties,
             IList<string>[] removeGlobalProperties,
             string[] toolsVersion,
-            bool returnTargetOutputs) => new(false, null);
+            bool returnTargetOutputs) => new(false, new List<IDictionary<string, ITaskItem[]>>());
 
         public bool BuildProjectFilesInParallel(
             string[] projectFileNames,

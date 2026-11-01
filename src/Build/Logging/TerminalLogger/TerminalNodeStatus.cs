@@ -1,7 +1,9 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+#if DEBUG
 using System;
+#endif
 using Microsoft.Build.Framework.Logging;
 
 namespace Microsoft.Build.Logging;
@@ -82,6 +84,18 @@ internal class TerminalNodeStatus
             _ => $"{TerminalLogger.Indentation}{Project} {AnsiCodes.Colorize(TargetFramework, TerminalLogger.TargetFrameworkColor)} {AnsiCodes.Colorize(RuntimeIdentifier, TerminalLogger.RuntimeIdentifierColor)} {Target} ({Stopwatch.ElapsedSeconds:F1}s)"
         };
 
-    public override int GetHashCode() =>
-        HashCode.Combine(Project, TargetFramework, RuntimeIdentifier, TargetPrefixColor, TargetPrefix, Target);
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = (hash * 31) + (Project?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (TargetFramework?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (RuntimeIdentifier?.GetHashCode() ?? 0);
+            hash = (hash * 31) + TargetPrefixColor.GetHashCode();
+            hash = (hash * 31) + (TargetPrefix?.GetHashCode() ?? 0);
+            hash = (hash * 31) + (Target?.GetHashCode() ?? 0);
+            return hash;
+        }
+    }
 }

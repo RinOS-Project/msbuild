@@ -162,9 +162,21 @@ namespace Microsoft.Build.Collections
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            if (array is null) throw new ArgumentNullException(nameof(array));
-            if (arrayIndex < 0) throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-            if (array.Length - arrayIndex < count) throw new ArgumentException("The destination array is too small.", nameof(array));
+            if (array is null)
+            {
+                throw new ArgumentNullException(nameof(array));
+            }
+
+            if (arrayIndex < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(arrayIndex));
+            }
+
+            if (array.Length - arrayIndex < count)
+            {
+                throw new ArgumentException("The destination array is too small.", nameof(array));
+            }
+
             for (int i = 0; i < count; i++)
             {
                 array[arrayIndex + i] = new KeyValuePair<TKey, TValue>(keys[i], values[i]);
@@ -173,11 +185,30 @@ namespace Microsoft.Build.Collections
 
         void ICollection.CopyTo(Array array, int index)
         {
-            if (array is null) throw new ArgumentNullException(nameof(array));
-            if (array.Rank != 1) throw new ArgumentException("The destination array must be one-dimensional.", nameof(array));
-            if (array.GetLowerBound(0) != 0) throw new ArgumentException("The destination array must have a zero lower bound.", nameof(array));
-            if (index < 0) throw new ArgumentOutOfRangeException(nameof(index));
-            if (array.Length - index < count) throw new ArgumentException("The destination array is too small.", nameof(array));
+            if (array is null)
+            {
+                throw new ArgumentNullException(nameof(array));
+            }
+
+            if (array.Rank != 1)
+            {
+                throw new ArgumentException("The destination array must be one-dimensional.", nameof(array));
+            }
+
+            if (array.GetLowerBound(0) != 0)
+            {
+                throw new ArgumentException("The destination array must have a zero lower bound.", nameof(array));
+            }
+
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            if (array.Length - index < count)
+            {
+                throw new ArgumentException("The destination array is too small.", nameof(array));
+            }
 
             if (array is KeyValuePair<TKey, TValue>[] pairs)
             {
